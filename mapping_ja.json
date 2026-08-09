@@ -1,16 +1,44 @@
 {
     "categories": {
-        "マーケティング": "marketing",
-        "プログラム管理": "program-management",
-        "資金調達": "fundraising"
+        "marketing": "マーケティング",
+        "program-management": "プログラム管理",
+        "fundraising": "資金調達"
     },
     "tasks": {
-        "マーケティング": "marketing",
-        "プログラム管理": "program-management",
-        "プログラムと影響に関するレポート": "program-and-impact-reporting",
-        "ボランティア管理": "volunteer-management",
-        "助成金申請書": "grant-writing",
-        "寄付者への働きかけ": "donor-engagement",
-        "募金活動のアイデアとイベント": "fundraising-ideas-and-events"
+        "marketing": "マーケティング",
+        "program-management": "プログラム管理",
+        "program-and-impact-reporting": "プログラムと影響に関するレポート",
+        "volunteer-management": "ボランティア管理",
+        "grant-writing": "助成金申請書",
+        "donor-engagement": "寄付者への働きかけ",
+        "fundraising-ideas-and-events": "募金活動のアイデアとイベント"
+    },
+    "labels": {
+        "task": "タスク",
+        "tool": "ツール",
+        "prompt": "プロンプト",
+        "impact": "インパクト"
+    },
+    "columns": {
+        "category": [
+            "category",
+            "カテゴリ"
+        ],
+        "task": [
+            "task",
+            "タスク"
+        ],
+        "tool": [
+            "tool",
+            "ツール"
+        ],
+        "prompt": [
+            "prompt",
+            "プロンプト"
+        ],
+        "impact": [
+            "impact",
+            "インパクト"
+        ]
     }
 }

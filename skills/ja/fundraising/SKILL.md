@@ -3,28 +3,24 @@ name: 資金調達
 description: 資金調達
 ---
 
-# 資金調達 (fundraising) - [JA]
+# 資金調達
 
-ユーザーの目的に応じて、`references/` ディレクトリ内の該当タスクファイルを参照して実行してください。
-
-## タスク参照インデックス (References)
-
-- **助成金申請書 (No.01)** (`references/grant-writing-01.md`)
-- **助成金申請書 (No.02)** (`references/grant-writing-02.md`)
-- **助成金申請書 (No.03)** (`references/grant-writing-03.md`)
-- **助成金申請書 (No.04)** (`references/grant-writing-04.md`)
-- **寄付者への働きかけ (No.01)** (`references/donor-engagement-01.md`)
-- **寄付者への働きかけ (No.02)** (`references/donor-engagement-02.md`)
-- **寄付者への働きかけ (No.03)** (`references/donor-engagement-03.md`)
-- **寄付者への働きかけ (No.04)** (`references/donor-engagement-04.md`)
-- **寄付者への働きかけ (No.05)** (`references/donor-engagement-05.md`)
-- **寄付者への働きかけ (No.06)** (`references/donor-engagement-06.md`)
-- **寄付者への働きかけ (No.07)** (`references/donor-engagement-07.md`)
-- **寄付者への働きかけ (No.08)** (`references/donor-engagement-08.md`)
-- **寄付者への働きかけ (No.09)** (`references/donor-engagement-09.md`)
-- **寄付者への働きかけ (No.10)** (`references/donor-engagement-10.md`)
-- **募金活動のアイデアとイベント (No.01)** (`references/fundraising-ideas-and-events-01.md`)
-- **募金活動のアイデアとイベント (No.02)** (`references/fundraising-ideas-and-events-02.md`)
-- **募金活動のアイデアとイベント (No.03)** (`references/fundraising-ideas-and-events-03.md`)
-- **募金活動のアイデアとイベント (No.04)** (`references/fundraising-ideas-and-events-04.md`)
-- **募金活動のアイデアとイベント (No.05)** (`references/fundraising-ideas-and-events-05.md`)
+- **助成金申請書 1** (`references/grant-writing-01.md`)
+- **助成金申請書 2** (`references/grant-writing-02.md`)
+- **助成金申請書 3** (`references/grant-writing-03.md`)
+- **助成金申請書 4** (`references/grant-writing-04.md`)
+- **寄付者への働きかけ 1** (`references/donor-engagement-01.md`)
+- **寄付者への働きかけ 2** (`references/donor-engagement-02.md`)
+- **寄付者への働きかけ 3** (`references/donor-engagement-03.md`)
+- **寄付者への働きかけ 4** (`references/donor-engagement-04.md`)
+- **寄付者への働きかけ 5** (`references/donor-engagement-05.md`)
+- **寄付者への働きかけ 6** (`references/donor-engagement-06.md`)
+- **寄付者への働きかけ 7** (`references/donor-engagement-07.md`)
+- **寄付者への働きかけ 8** (`references/donor-engagement-08.md`)
+- **寄付者への働きかけ 9** (`references/donor-engagement-09.md`)
+- **寄付者への働きかけ 10** (`references/donor-engagement-10.md`)
+- **募金活動のアイデアとイベント 1** (`references/fundraising-ideas-and-events-01.md`)
+- **募金活動のアイデアとイベント 2** (`references/fundraising-ideas-and-events-02.md`)
+- **募金活動のアイデアとイベント 3** (`references/fundraising-ideas-and-events-03.md`)
+- **募金活動のアイデアとイベント 4** (`references/fundraising-ideas-and-events-04.md`)
+- **募金活動のアイデアとイベント 5** (`references/fundraising-ideas-and-events-05.md`)

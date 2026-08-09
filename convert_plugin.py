@@ -5,25 +5,30 @@ import os
 import re
 import sys
 import pandas as pd
-from rich.console import Console
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.table import Table
 
-console = Console()
+
+DEFAULT_LABELS = {
+    'ja': {
+        'task': 'タスク',
+        'tool': 'ツール',
+        'prompt': 'プロンプト',
+        'impact': 'インパクト',
+    },
+    'en': {
+        'task': 'Task',
+        'tool': 'Tool',
+        'prompt': 'Prompt',
+        'impact': 'Impact',
+    }
+}
+
 
 
 def load_mapping(mapping_filepath):
     """Load external mapping configuration file"""
     if os.path.exists(mapping_filepath):
         with open(mapping_filepath, 'r', encoding='utf-8') as f:
-            console.print(
-                f'[green]✔[/green] Loaded configuration file "{mapping_filepath}".'
-            )
             return json.load(f)
-    console.print(
-        f'[yellow]![/yellow] "{mapping_filepath}" not found, using dynamic slug generation.'
-    )
     return {'categories': {}, 'tasks': {}}
 
 
@@ -68,8 +73,21 @@ def build_agent_plugin(
     if mapping_file_path is None:
         mapping_file_path = f'mapping_{lang_code}.json'
     mapping = load_mapping(mapping_file_path)
-    category_map = mapping.get('categories', {})
-    task_map = mapping.get('tasks', {})
+    category_raw = mapping.get('categories', {})
+    category_map = {val: key for key, val in category_raw.items()}
+    task_raw = mapping.get('tasks', {})
+    task_map = {val: key for key, val in task_raw.items()}
+
+    lang_defaults = DEFAULT_LABELS.get(lang_code, DEFAULT_LABELS['en'])
+    labels = {
+        key: mapping.get('labels', {}).get(key, val)
+        for key, val in lang_defaults.items()
+    }
+
+    task_label = labels['task']
+    tool_label = labels['tool']
+    prompt_label = labels['prompt']
+    impact_label = labels['impact']
 
     skills_root = os.path.join(output_dir, 'skills', lang_code)
     os.makedirs(skills_root, exist_ok=True)
@@ -81,40 +99,43 @@ def build_agent_plugin(
             str(col).strip().replace('\ufeff', '') for col in df.columns
         ]
     except Exception as e:
-        console.print(f'[bold red]Error: Failed to read CSV file:[/bold red] {e}')
+        print(f'Error: Failed to read CSV file: {e}', file=sys.stderr)
         sys.exit(1)
 
-    # Detect required columns (supports both Japanese and English headers)
-    cat_col = next((c for c in df.columns if any(x in str(c).lower() for x in ['category', 'カテゴリ'])), df.columns[0])
-    task_col = next((c for c in df.columns if any(x in str(c).lower() for x in ['task', 'タスク'])), df.columns[1])
-    tool_col = next(
-        (c for c in df.columns if any(x in str(c).lower() for x in ['tool', 'ツール'])),
-        df.columns[2] if len(df.columns) > 2 else '',
-    )
-    prompt_col = next(
-        (c for c in df.columns if any(x in str(c).lower() for x in ['prompt', 'プロンプト'])),
-        df.columns[3] if len(df.columns) > 3 else '',
-    )
-    impact_col = next(
-        (c for c in df.columns if any(x in str(c).lower() for x in ['impact', 'インパクト'])),
-        df.columns[4] if len(df.columns) > 4 else '',
-    )
+    required_keys = ['category', 'task', 'tool', 'prompt', 'impact']
+    col_mapping = mapping.get('columns', {})
+    detected_cols = {}
+
+    for key in required_keys:
+        kws = col_mapping.get(key)
+        if not kws:
+            print(f'Error: Column mapping configuration for "{key}" is missing in JSON.', file=sys.stderr)
+            sys.exit(1)
+
+        kws = [str(k).lower() for k in kws]
+        matched = None
+        for col in df.columns:
+            if any(kw in str(col).lower() for kw in kws):
+                matched = col
+                break
+
+        if not matched:
+            print(
+                f'Error: Required column for "{key}" (keywords: {kws}) not found in CSV.',
+                file=sys.stderr
+            )
+            sys.exit(1)
+
+        detected_cols[key] = matched
 
     category_data = {}
-    total_prompts = 0
 
     for _, row in df.iterrows():
-        category = str(row.get(cat_col, '')).strip() or 'Other'
-        task = str(row.get(task_col, '')).strip() or 'Task'
-        tool = (
-            str(row.get(tool_col, '')).strip() if tool_col else 'Unspecified'
-        ) or 'Unspecified'
-        prompt = (
-            str(row.get(prompt_col, '')).strip() if prompt_col else ''
-        ) or ''
-        impact = (
-            str(row.get(impact_col, '')).strip() if impact_col else ''
-        ) or ''
+        category = str(row.get(detected_cols['category'], '')).strip() or 'Other'
+        task = str(row.get(detected_cols['task'], '')).strip() or 'Task'
+        tool = str(row.get(detected_cols['tool'], '')).strip() or 'Unspecified'
+        prompt = str(row.get(detected_cols['prompt'], '')).strip()
+        impact = str(row.get(detected_cols['impact'], '')).strip()
 
         if not prompt:
             continue
@@ -123,125 +144,88 @@ def build_agent_plugin(
             category_data[category] = []
 
         category_data[category].append(
-            {'task': task, 'tool': tool, 'prompt': prompt, 'impact': impact}
-        )
-        total_prompts += 1
-
-    with Progress(
-        SpinnerColumn(),
-        TextColumn('[progress.description]{task.description}'),
-        console=console,
-    ) as progress:
-        task_id = progress.add_task(
-            description='[cyan]Building Agent Plugin skills...', total=None
+            {
+                'task': task,
+                'tool': tool,
+                'prompt': prompt,
+                'impact': impact,
+            }
         )
 
-        for category_name, items in category_data.items():
-            # Get English directory name from mapping
-            dir_name = category_map.get(
-                category_name, sanitize_slug(category_name)
+    for category_name, items in category_data.items():
+        # Get English directory name from mapping
+        dir_name = category_map.get(
+            category_name, sanitize_slug(category_name)
+        )
+
+        cat_dir = os.path.join(skills_root, dir_name)
+        ref_dir = os.path.join(cat_dir, 'references')
+        os.makedirs(ref_dir, exist_ok=True)
+
+        index_list = []
+        task_slug_counters = {}
+
+        for item in items:
+            task_name = item['task']
+            task_slug = task_map.get(task_name, sanitize_slug(task_name))
+
+            task_slug_counters[task_slug] = (
+                task_slug_counters.get(task_slug, 0) + 1
             )
+            sub_seq = task_slug_counters[task_slug]
 
-            cat_dir = os.path.join(skills_root, dir_name)
-            ref_dir = os.path.join(cat_dir, 'references')
-            os.makedirs(ref_dir, exist_ok=True)
+            ref_filename = f'{task_slug}-{sub_seq:02d}.md'
+            ref_filepath = os.path.join(ref_dir, ref_filename)
 
-            index_list = []
-            task_slug_counters = {}
+            ref_content = f"""# {task_label}: {task_name} {sub_seq}
 
-            for i, item in enumerate(items, start=1):
-                task_name = item['task']
-                task_slug = task_map.get(task_name, sanitize_slug(task_name))
-
-                task_slug_counters[task_slug] = (
-                    task_slug_counters.get(task_slug, 0) + 1
-                )
-                sub_seq = task_slug_counters[task_slug]
-
-                ref_filename = f'{task_slug}-{sub_seq:02d}.md'
-                ref_filepath = os.path.join(ref_dir, ref_filename)
-
-                task_label = 'タスク' if lang_code == 'ja' else 'Task'
-                tool_label = 'ツール' if lang_code == 'ja' else 'Tool'
-                impact_label = 'インパクト' if lang_code == 'ja' else 'Impact'
-                prompt_label = 'プロンプト' if lang_code == 'ja' else 'Prompt'
-
-                ref_content = f"""# {task_label}: {task_name} (No.{sub_seq:02d})
-
-## 1. {task_label}
+## {task_label}
 {task_name}
-
-## 2. {tool_label}
+"""
+            if item['tool'] and item['tool'] != 'Unspecified':
+                ref_content += f"""
+## {tool_label}
 {item['tool']}
+"""
 
-## 3. {prompt_label}
+            ref_content += f"""
+## {prompt_label}
 
 {item['prompt']}
-
-## 4. {impact_label}
-{item['impact'] if item['impact'] else ("記述なし" if lang_code == 'ja' else "N/A")}
 """
-                with open(ref_filepath, 'w', encoding='utf-8') as rf:
-                    rf.write(ref_content)
 
-                index_list.append(
-                    f"- **{task_name} (No.{sub_seq:02d})** (`references/{ref_filename}`)"
-                )
+            if item['impact']:
+                ref_content += f"""
+## {impact_label}
+{item['impact']}
+"""
 
-            skill_md_path = os.path.join(cat_dir, 'SKILL.md')
-            
-            # Write language-specific description in SKILL.md
-            if lang_code == 'ja':
-                desc_text = f"ユーザーの目的に応じて、`references/` ディレクトリ内の該当タスクファイルを参照して実行してください。"
-                ref_header = "タスク参照インデックス (References)"
-            else:
-                desc_text = f"Please refer to the corresponding task file in the `references/` directory based on the user's objective."
-                ref_header = "References"
+            # Clean up multiple newlines at the end
+            ref_content = ref_content.strip() + '\n'
 
-            skill_md_content = f"""---
+            with open(ref_filepath, 'w', encoding='utf-8') as rf:
+                rf.write(ref_content)
+
+            index_list.append(
+                f"- **{task_name} {sub_seq}** (`references/{ref_filename}`)"
+            )
+
+        skill_md_path = os.path.join(cat_dir, 'SKILL.md')
+        
+        skill_md_content = f"""---
 name: {category_name}
 description: {category_name}
 ---
 
-# {category_name} ({dir_name}) - [{lang_code.upper()}]
-
-{desc_text}
-
-## {ref_header}
+# {category_name}
 
 """ + '\n'.join(
-                index_list
-            ) + '\n'
+            index_list
+        ) + '\n'
 
-            with open(skill_md_path, 'w', encoding='utf-8') as sf:
-                sf.write(skill_md_content)
+        with open(skill_md_path, 'w', encoding='utf-8') as sf:
+            sf.write(skill_md_content)
 
-        progress.update(
-            task_id, completed=True, description='[green]Build complete!'
-        )
-
-    table = Table(
-        title=f'Build Result Summary [{lang_code.upper()}]', show_header=True
-    )
-    table.add_column('Category', style='cyan')
-    table.add_column('Slug', style='green')
-    table.add_column('Prompts Generated', justify='right', style='magenta')
-
-    for cat_name, items in category_data.items():
-        slug = category_map.get(cat_name, sanitize_slug(cat_name))
-        table.add_row(cat_name, slug, f'{len(items)}' if lang_code == 'en' else f'{len(items)} 件')
-
-    console.print('\n')
-    console.print(
-        Panel.fit(
-            f'[bold green]Agent Plugin package built successfully![/bold green]\n'
-            f'Data Source: [bold]{csv_file_path}[/bold]\n'
-            f'Language: [bold]{lang_code.upper()}[/bold] | Total Prompts: [bold]{total_prompts}[/bold]',
-            title='SUCCESS',
-            border_style='green',
-        )
-    )
-    console.print(table)
 
 
 if __name__ == '__main__':
@@ -270,6 +254,4 @@ if __name__ == '__main__':
     if csv_file:
         build_agent_plugin(csv_file, lang_code=target_lang)
     else:
-        console.print(
-            '[bold red]Error: Input CSV file not found.[/bold red]'
-        )
+        print('Error: Input CSV file not found.', file=sys.stderr)

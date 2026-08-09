@@ -1,0 +1,16 @@
+{
+    "categories": {
+        "マーケティング": "marketing",
+        "プログラム管理": "program-management",
+        "資金調達": "fundraising"
+    },
+    "tasks": {
+        "マーケティング": "marketing",
+        "プログラム管理": "program-management",
+        "プログラムと影響に関するレポート": "program-and-impact-reporting",
+        "ボランティア管理": "volunteer-management",
+        "助成金申請書": "grant-writing",
+        "寄付者への働きかけ": "donor-engagement",
+        "募金活動のアイデアとイベント": "fundraising-ideas-and-events"
+    }
+}
